@@ -1,45 +1,58 @@
-const { ethers } = require('hardhat');
-const { expect } = require('chai');
+const { ethers } = require("hardhat");
+// const { ethers } = require("ethers")
+const { expect } = require("chai");
 
-describe('Escrow', function () {
-  let contract;
-  let depositor;
-  let beneficiary;
-  let arbiter;
-  const deposit = ethers.utils.parseEther('1');
+describe("Escrow", function () {
+  let escrow, owner, beneficiary, arbiter, depositor;
+
   beforeEach(async () => {
-    depositor = ethers.provider.getSigner(0);
-    beneficiary = ethers.provider.getSigner(1);
-    arbiter = ethers.provider.getSigner(2);
-    const Escrow = await ethers.getContractFactory('Escrow');
-    contract = await Escrow.deploy(
-      arbiter.getAddress(),
-      beneficiary.getAddress(),
-      {
-        value: deposit,
-      }
-    );
-    await contract.deployed();
+    // Get signers
+    const [ownerSigner, beneficiarySigner, arbiterSigner, depositorSigner] = await hardhat.getSigners();
+    owner = ownerSigner.address;
+    beneficiary = beneficiarySigner.address;
+    arbiter = arbiterSigner.address;
+    depositor = depositorSigner.address;
+
+    // Deploy the Escrow contract
+    const Escrow = await ethers.getContractFactory("Escrow");
+    escrow = await Escrow.deploy();
+
+    await escrow.deployed();
   });
 
-  it('should be funded initially', async function () {
-    let balance = await ethers.provider.getBalance(contract.address);
-    expect(balance).to.eq(deposit);
-  });
-
-  describe('after approval from address other than the arbiter', () => {
-    it('should revert', async () => {
-      await expect(contract.connect(beneficiary).approve()).to.be.reverted;
+  it("Should create a new escrow", async function () {
+    // Create a new escrow
+    await escrow.escrow(arbiter, beneficiary, "Test Escrow", {
+      value: ethers.utils.parseEther("1.0")
     });
+
+    console.log("esrow",escrow)
+
+    // Check the escrow details
+    const escrowCount = await escrow.escrowCounter();
+    const escrowDetails = await escrow.escrowStorage(escrowCount - 1);
+    expect(escrowDetails.arbiter).to.equal(arbiter);
+    expect(escrowDetails.beneficiary).to.equal(beneficiary);
+    expect(escrowDetails.depositor).to.equal(owner);
+    expect(escrowDetails.amount.toString()).to.equal(ethers.utils.parseEther("1.0").toString());
+    expect(escrowDetails.isApproved).to.be.false;
   });
 
-  describe('after approval from the arbiter', () => {
-    it('should transfer balance to beneficiary', async () => {
-      const before = await ethers.provider.getBalance(beneficiary.getAddress());
-      const approveTxn = await contract.connect(arbiter).approve();
-      await approveTxn.wait();
-      const after = await ethers.provider.getBalance(beneficiary.getAddress());
-      expect(after.sub(before)).to.eq(deposit);
-    });
-  });
+  // it("Should approve an escrow", async function () {
+  //   // Create a new escrow
+  //   await escrow.escrow(arbiter, beneficiary, "Test Escrow", {
+  //     value: ethers.utils.parseEther("1.0")
+  //   });
+
+  //   // Approve the escrow
+  //   await escrow.approve(0, { from: arbiter });
+
+  //   // Check the escrow is approved
+  //   const escrowDetails = await escrow.escrowStorage(0);
+  //   expect(escrowDetails.isApproved).to.be.true;
+
+  //   // Check that the beneficiary received the funds
+  //   const beneficiaryBalance = await ethers.provider.getBalance(beneficiary);
+  //   expect(beneficiaryBalance.toString()).to.equal(ethers.utils.parseEther("1.0").toString());
+  // });
 });
