@@ -1,6 +1,7 @@
 # Alex (Alchemy Ethereum) Block Explorer
 
 [Etherscan](https://etherscan.io/) is a good example of an Ethereum blockexplorer. Check it out to get familiar with how blockexplorers generally work.
+Alex is a blockchain explorer that uses the Alchemy API to fetch and display information about the latest block number and its transactions on the Ethereum network. It provides a user-friendly interface to monitor real-time data, such as the latest block number, last mined timestamp, chain ID, number of transactions in the last block, and gas used. The app automatically refreshes the displayed data every 10 seconds to provide users with up-to-date information. The Blocks component is used to render each block's transaction details in an organized and easy-to-read format.
 
 ## Getting Started
 
